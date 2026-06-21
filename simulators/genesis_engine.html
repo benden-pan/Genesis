@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genesis Engine · 造世引擎</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#080711;--void-2:#0e0d1c;--panel:#100f20;--line:#22203a;--line-2:#2e2b4a;
+    --text:#ece9f7;--dim:#8b88ad;--dim-2:#5d5a7c;--break:#d05a6e;
+    --l0:#3d5a99;--l1:#2f9fb0;--l2:#46b87a;--l3:#c7b13f;--l4:#e07a33;--l5:#f3ead2;--l6:#ffffff;
+  }
+  *{box-sizing:border-box}html,body{height:100%;margin:0}
+  body{background:var(--void);color:var(--text);font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden;-webkit-font-smoothing:antialiased}
+  #app{display:flex;height:100vh;width:100vw}
+  #stage{position:relative;flex:1;min-width:0;background:radial-gradient(120% 90% at 70% 20%,#14122a 0%,var(--void) 60%)}
+  canvas{display:block;width:100%;height:100%}
+  #stage-hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);font-size:11px;letter-spacing:.1em;color:var(--dim-2);text-transform:uppercase;pointer-events:none;text-align:center;max-width:72%}
+  #ticker{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);opacity:0;transition:opacity .3s;pointer-events:none}
+  #ticker.on{opacity:1}
+  #panel{width:340px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;box-shadow:1px 0 0 #000,24px 0 60px -30px #000;z-index:2}
+  .pad{padding:20px 22px}
+  header.brand{border-bottom:1px solid var(--line)}
+  .brand h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:22px;letter-spacing:-.01em;margin:0;line-height:1}
+  .brand .zh{font-size:13px;color:var(--dim);margin-top:6px;letter-spacing:.18em}
+  .brand .sub{font-size:11px;color:var(--dim-2);margin-top:12px;line-height:1.55}
+  .scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+  .block{border-bottom:1px solid var(--line);padding:18px 22px}
+  .eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim-2);margin:0 0 12px;display:flex;justify-content:space-between}
+  .stat-row{display:flex;justify-content:space-between;align-items:baseline;margin:7px 0}
+  .stat-row .k{font-size:11px;color:var(--dim);letter-spacing:.05em}
+  .stat-row .v{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
+  .v.break{color:var(--break)}
+  .asc{display:flex;flex-direction:column-reverse;gap:3px;margin-top:4px}
+  .rung{display:flex;align-items:center;gap:10px;height:26px;padding:0 8px;border-radius:5px;position:relative;background:#ffffff05;opacity:.32;transition:opacity .4s,background .4s}
+  .rung.live{opacity:1;background:#ffffff0a}
+  .rung.top{box-shadow:0 0 0 1px #ffffff22,0 0 18px -4px currentColor}
+  .rung .dot{width:11px;height:11px;border-radius:50%;background:currentColor;flex:none;box-shadow:0 0 10px -1px currentColor}
+  .rung .lab{font-size:11px;color:var(--text);letter-spacing:.05em;width:96px}
+  .rung .lab small{color:var(--dim);letter-spacing:.1em}
+  .rung .cnt{margin-left:auto;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .rung.live .cnt{color:var(--text)}
+  .agency{display:flex;align-items:center;gap:14px;margin-top:2px}
+  .ring{width:42px;height:42px;border-radius:50%;border:2px dashed var(--dim-2);flex:none;display:grid;place-items:center;font-size:18px;color:var(--dim-2);transition:.4s}
+  .ring.on{border-style:solid;border-color:var(--l5);color:var(--l5);box-shadow:0 0 24px -4px var(--l5)}
+  .agency .at{font-size:12px;color:var(--text);letter-spacing:.05em}
+  .agency .ad{font-size:10.5px;color:var(--dim-2);line-height:1.5;margin-top:3px}
+  .btns{display:flex;gap:8px;margin-bottom:16px}
+  button.ctl{flex:1;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.05em;color:var(--text);background:#ffffff08;border:1px solid var(--line-2);border-radius:6px;padding:9px 0;cursor:pointer;transition:.15s}
+  button.ctl:hover{background:#ffffff12;border-color:#46455f}
+  button.ctl:focus-visible{outline:2px solid var(--l1);outline-offset:2px}
+  button.ctl.primary{background:var(--l1);color:#04121a;border-color:var(--l1);font-weight:600}
+  button.ctl.primary:hover{filter:brightness(1.1)}
+  .knob{margin:14px 0}
+  .knob label{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:6px}
+  .knob label b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:var(--line-2);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);cursor:pointer;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line-2)}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--text);cursor:pointer;border:2px solid var(--panel)}
+  input:focus-visible{outline:2px solid var(--l1);outline-offset:4px}
+  #log{font-size:11px;line-height:1.7;max-height:150px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+  #log .ln{display:flex;gap:10px;white-space:nowrap;color:var(--dim)}
+  #log .ln .t{color:var(--dim-2);width:42px;flex:none}
+  #log .ln .e{width:48px;flex:none}
+  #log .ln .seed{color:var(--dim-2)}
+  .foot{padding:14px 22px;font-size:10px;color:var(--dim-2);letter-spacing:.04em;line-height:1.6}
+  @media (max-width:760px){
+    #app{flex-direction:column}
+    #panel{width:100%;height:auto;max-height:48vh;border-right:none;border-bottom:1px solid var(--line)}
+    #stage{flex:1;min-height:52vh}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <header class="brand pad">
+      <h1>Genesis Engine</h1>
+      <div class="zh">造世引擎 · MVP v3</div>
+      <div class="sub">A living world: the low level is continually born and faded, while sticky high structure persists through the turnover. Plural lineages never merge.<br>低層不斷新生與消散，高層在汰換中仍存續；世系並存而不相融。</div>
+    </header>
+    <div class="scroll">
+      <div class="block">
+        <p class="eyebrow"><span>Readout</span><span id="tickN">t000</span></p>
+        <div class="stat-row"><span class="k">tallest layer 最高層</span><span class="v" id="tall">L0</span></div>
+        <div class="stat-row"><span class="k">lineages 世系 — diversity</span><span class="v" id="lin">0</span></div>
+        <div class="stat-row"><span class="k">substrate 基質 — born / faded</span><span class="v" id="sub" style="font-size:14px">0 / 0</span></div>
+        <div class="stat-row"><span class="k">folds 壓縮 (P9)</span><span class="v" id="folds">0</span></div>
+        <div class="stat-row"><span class="k">collapses 崩解 (P13)</span><span class="v break" id="breaks">0</span></div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Ascension 攀升 — all layers coexist</span><span>L0 → L6</span></p>
+        <div class="asc" id="asc"></div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>The empty slot ⊘</span><span>P19</span></p>
+        <div class="agency">
+          <div class="ring" id="ring">⊘</div>
+          <div>
+            <div class="at" id="agText">Agency — not emerged</div>
+            <div class="ad">Needs the self-model fold (Step 35): a unit that models others, turned back upon itself. Absent in this seed.</div>
+          </div>
+        </div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Controls 控制</span></p>
+        <div class="btns">
+          <button class="ctl primary" id="play">Pause</button>
+          <button class="ctl" id="step">Step</button>
+          <button class="ctl" id="reseed">Reseed</button>
+        </div>
+        <div class="knob"><label>Speed 速度 <b id="vSpeed">3</b></label><input type="range" id="kSpeed" min="1" max="8" value="3" step="1"></div>
+        <div class="knob"><label>Lineages 世系 <b id="vLin">3</b></label><input type="range" id="kLin" min="2" max="4" value="3" step="1"></div>
+        <div class="knob"><label>Indelibility 難抹滅 <b id="vInd">0.70</b></label><input type="range" id="kInd" min="0.3" max="1.2" value="0.7" step="0.05"></div>
+        <div class="knob"><label>Entropy 衰減 <b id="vDec">0.03</b></label><input type="range" id="kDec" min="0.02" max="0.10" value="0.03" step="0.005"></div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Event log 事件</span></p>
+        <div id="log"></div>
+      </div>
+      <div class="foot">Genesis · V2.1 — Spine A: every unit reduces to its members; the substrate is never destroyed. Lineages never merge.<br>服從 V1 憲章 · CC BY 4.0</div>
+    </div>
+  </aside>
+  <div id="stage">
+    <div id="ticker"></div>
+    <canvas id="cv"></canvas>
+    <div id="stage-hint">every layer is alive — differences bud, units divide (proliferation) · structure persists through the churn · lineages never merge</div>
+  </div>
+</div>
+<script>
+"use strict";
+const ROOT=getComputedStyle(document.documentElement);
+const LAYER_COLORS=['--l0','--l1','--l2','--l3','--l4','--l5','--l6'].map(v=>ROOT.getPropertyValue(v).trim());
+const layerColor=L=>LAYER_COLORS[Math.min(L,LAYER_COLORS.length-1)];
+const LAYER_NAME=['Distinction','Relation','Boundary','Memory','Model','Meaning','—'];
+const LAYER_ZH=['區分','關係','邊界','記憶','模型','意義','—'];
+const TAU=Math.PI*2;
+
+function makeSeed(over){return Object.assign({
+  feature_dim:6,n_mega:3,branch:3,mega_sep:1.0,
+  spreads:[0.13,0.037,0.0106],point_noise:0.003,
+  sim_sigma:0.12,relax:1.6,assoc_floor:0.10,association_gain:0.34,
+  edge_min:0.42,compress_density:0.36,min_cluster_size:3,threshold_jitter:0.05,
+  base_decay:0.03,layer_stick:0.7,dissolve_cohesion:0.15,support_boost:0.04,grace_ticks:14,
+  birth_rate:10,birth_noise:0.006,l0_min_age:8,l0_death_prob:0.06,member_death_prob:0.005,
+  recruit_sim:0.45,split_size:9,layer_penalty:0.09,max_layer:6,carrying:420
+},over||{});}
+function RNG(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+
+class World{
+  constructor(seed,rngSeed){
+    this.s=seed;this.rnd=RNG(rngSeed);
+    this.nodes=new Map();this.couplings=new Map();
+    this._id=0;this.tick=0;this.events={fold:0,brk:0,born:0,faded:0,recruit:0,split:0};this.log=[];this._spare=null;
+    this._build();
+  }
+  _nid(){return this._id++;}
+  _gauss(){if(this._spare!=null){const v=this._spare;this._spare=null;return v;}
+    let u=0,v=0,r=0;do{u=this.rnd()*2-1;v=this.rnd()*2-1;r=u*u+v*v;}while(r===0||r>=1);
+    const m=Math.sqrt(-2*Math.log(r)/r);this._spare=v*m;return u*m;}
+  _vec(){const a=[];for(let i=0;i<this.s.feature_dim;i++)a.push(this.rnd());return a;}
+  _rdir(){const v=[];let n=0;for(let i=0;i<this.s.feature_dim;i++){const g=this._gauss();v.push(g);n+=g*g;}n=Math.sqrt(n)||1e-9;return v.map(x=>x/n);}
+  _dist(a,b){let d=0;for(let i=0;i<a.length;i++){const x=a[i]-b[i];d+=x*x;}return Math.sqrt(d);}
+  _key(a,b){return a<b?a+','+b:b+','+a;}
+  _node(layer,feat,lin){return {nid:this._nid(),layer,feature:feat,members:[],parent:null,cohesion:1,bind:1,age:0,exists:true,lineage:lin,x:0,y:0,vx:0,vy:0,tx:0,ty:0,flash:0};}
+  _build(){const s=this.s,megas=[];let g=0;
+    while(megas.length<s.n_mega&&g<100000){g++;const c=this._vec();
+      if(megas.every(m=>this._dist(c,m)>=s.mega_sep))megas.push(c);}
+    megas.forEach((m,idx)=>this._gen(m,0,idx));}
+  _gen(center,level,lin){const s=this.s;
+    if(level===s.spreads.length){for(let i=0;i<s.branch;i++){
+        const feat=center.map(c=>c+this._gauss()*s.point_noise);const nd=this._node(0,feat,lin);this.nodes.set(nd.nid,nd);}return;}
+    for(let i=0;i<s.branch;i++){const d=this._rdir();const child=center.map((c,k)=>c+s.spreads[level]*d[k]);this._gen(child,level+1,lin);}}
+  existing(){const a=[];for(const n of this.nodes.values())if(n.exists)a.push(n);return a;}
+  frontier(){const a=[];for(const n of this.nodes.values())if(n.exists&&n.parent===null)a.push(n);return a;}
+  _sim(a,b){const d=this._dist(a.feature,b.feature);return Math.exp(-(d*d)/(2*this.s.sim_sigma**2));}
+
+  // D: ongoing distinction (low level keeps being CREATED), self-limiting
+  distinction(){const s=this.s;
+    let live=0;for(const n of this.nodes.values())if(n.exists)live++;
+    const n_new=Math.round(s.birth_rate*Math.max(0,1-live/s.carrying));
+    if(n_new<=0)return;
+    const leaves=[];for(const n of this.nodes.values())if(n.exists&&n.layer===0)leaves.push(n);
+    if(!leaves.length)return;
+    for(let i=0;i<n_new;i++){const base=leaves[(this.rnd()*leaves.length)|0];
+      const feat=base.feature.map(c=>c+this._gauss()*s.birth_noise);
+      const nd=this._node(0,feat,base.lineage);
+      nd.tx=proj0(feat);nd.ty=proj1(feat);nd.x=base.x+(this.rnd()-.5)*16;nd.y=base.y+(this.rnd()-.5)*16;nd.flash=1;
+      this.nodes.set(nd.nid,nd);this.events.born++;}}
+
+  associate(){const s=this.s;
+    for(const [k,w] of [...this.couplings]){const nw=w*(1-s.base_decay);if(nw<0.02)this.couplings.delete(k);else this.couplings.set(k,nw);}
+    const fr=this.frontier();
+    for(const a of fr){let dmin=Infinity;const cand=[];
+      for(const b of fr){if(b===a||b.lineage!==a.lineage)continue;
+        const sim=this._sim(a,b);if(sim<s.assoc_floor)continue;
+        const d=this._dist(a.feature,b.feature);cand.push([d,sim,b]);if(d<dmin)dmin=d;}
+      const cut=dmin*s.relax;
+      for(const c of cand){if(c[0]<=cut){const k=this._key(a.nid,c[2].nid);
+        this.couplings.set(k,Math.min(1,(this.couplings.get(k)||0)+s.association_gain*c[1]));}}}}
+  _clusters(){const s=this.s,edge=s.edge_min+(this.rnd()*2-1)*s.threshold_jitter,adj=new Map();
+    for(const [k,w] of this.couplings){if(w<edge)continue;const [a,b]=k.split(',').map(Number);
+      const na=this.nodes.get(a),nb=this.nodes.get(b);
+      if(!na.exists||na.parent!==null||!nb.exists||nb.parent!==null)continue;
+      (adj.get(a)||adj.set(a,new Set()).get(a)).add(b);(adj.get(b)||adj.set(b,new Set()).get(b)).add(a);}
+    const seen=new Set(),out=[];
+    for(const start of adj.keys()){if(seen.has(start))continue;const stack=[start],comp=[];
+      while(stack.length){const x=stack.pop();if(seen.has(x))continue;seen.add(x);comp.push(x);for(const y of adj.get(x))if(!seen.has(y))stack.push(y);}
+      if(comp.length>=s.min_cluster_size)out.push(comp);}
+    return out;}
+  _density(comp){const n=comp.length;if(n<2)return 0;const cs=new Set(comp);let pres=0;
+    for(const [k,w] of this.couplings){const [a,b]=k.split(',').map(Number);if(cs.has(a)&&cs.has(b))pres+=w;}
+    return pres/(n*(n-1)/2);}
+  compress(){const s=this.s;
+    for(const comp of this._clusters()){
+      const target=Math.max.apply(null,comp.map(i=>this.nodes.get(i).layer))+1;
+      if(target>s.max_layer)continue;                         // natural ceiling
+      const dens=this._density(comp);
+      const crit=s.compress_density+s.layer_penalty*(target-1)+(this.rnd()*2-1)*s.threshold_jitter;
+      if(dens>=crit&&this.rnd()<Math.min(1,dens+0.2))this._fold(comp,dens);}}
+  _fold(comp,dens){const members=comp.map(i=>this.nodes.get(i));
+    const layer=Math.max.apply(null,members.map(m=>m.layer))+1,dim=members[0].feature.length,centroid=[];
+    for(let d=0;d<dim;d++)centroid.push(members.reduce((a,m)=>a+m.feature[d],0)/members.length);
+    const px=members.reduce((a,m)=>a+m.x,0)/members.length,py=members.reduce((a,m)=>a+m.y,0)/members.length;
+    const unit=this._node(layer,centroid,members[0].lineage);
+    unit.members=comp.slice();unit.bind=Math.min(1,dens);unit.x=px;unit.y=py;unit.flash=1;
+    this.nodes.set(unit.nid,unit);
+    const cs=new Set(comp),ext=new Map();
+    for(const [k,w] of [...this.couplings]){const [a,b]=k.split(',').map(Number);const ina=cs.has(a),inb=cs.has(b);
+      if(ina&&inb)this.couplings.delete(k);else if(ina||inb){const o=ina?b:a;ext.set(o,Math.max(ext.get(o)||0,w));this.couplings.delete(k);}}
+    for(const [o,w] of ext){const on=this.nodes.get(o);if(on.exists&&on.parent===null)this.couplings.set(this._key(unit.nid,o),w);}
+    for(const m of members)m.parent=unit.nid;
+    this.events.fold++;this.pushLog('fold',layer,comp.length,unit.nid);}
+
+  // recruitment: new differences feed existing units (turnover renewal)
+  recruit(){const s=this.s;const byLin=new Map();
+    for(const n of this.frontier())if(n.layer===1)(byLin.get(n.lineage)||byLin.set(n.lineage,[]).get(n.lineage)).push(n);
+    if(!byLin.size)return;
+    for(const n of this.nodes.values()){
+      if(!n.exists||n.parent!==null||n.layer!==0)continue;
+      const us=byLin.get(n.lineage);if(!us)continue;
+      let best=null,bs=0;for(const u of us){const sim=this._sim(n,u);if(sim>bs){bs=sim;best=u;}}
+      if(best&&bs>=s.recruit_sim){n.parent=best.nid;best.members.push(n.nid);this._refresh(best);
+        best.cohesion=Math.min(1,best.cohesion+0.04);this.events.recruit++;}}}
+  _refresh(u){const ms=u.members.map(m=>this.nodes.get(m)).filter(m=>m&&m.exists);if(!ms.length)return;
+    for(let d=0;d<u.feature.length;d++)u.feature[d]=ms.reduce((a,m)=>a+m.feature[d],0)/ms.length;}
+
+  // proliferation: units self-replicate by FISSION -- the L1+ analog of L0's
+  // "distinction self-replicates". Same generative function, one scale up.
+  proliferate(){const s=this.s;
+    for(const u of this.frontier()){if(u.layer<1)continue;
+      const alive=u.members.filter(m=>this.nodes.get(m).exists);
+      if(alive.length>=s.split_size)this._split(u,alive);}}
+  _split(u,alive){const s=this.s;const ms=alive.map(m=>this.nodes.get(m));
+    let dim=0,best=-1;
+    for(let d=0;d<s.feature_dim;d++){let mn=Infinity,mx=-Infinity;
+      for(const m of ms){if(m.feature[d]<mn)mn=m.feature[d];if(m.feature[d]>mx)mx=m.feature[d];}
+      if(mx-mn>best){best=mx-mn;dim=d;}}
+    ms.sort((a,b)=>a.feature[dim]-b.feature[dim]);
+    const half=ms.length>>1,g1=ms.slice(0,half),g2=ms.slice(half);
+    if(g1.length<s.min_cluster_size||g2.length<s.min_cluster_size)return;
+    for(const g of [g1,g2]){const cent=[];
+      for(let d=0;d<s.feature_dim;d++)cent.push(g.reduce((a,m)=>a+m.feature[d],0)/g.length);
+      const child=this._node(u.layer,cent,u.lineage);child.members=g.map(m=>m.nid);child.bind=u.bind;
+      child.x=u.x+(this.rnd()-.5)*30;child.y=u.y+(this.rnd()-.5)*30;child.flash=1;
+      this.nodes.set(child.nid,child);for(const m of g)m.parent=child.nid;}
+    for(const [k] of [...this.couplings]){const [a,b]=k.split(',').map(Number);if(a===u.nid||b===u.nid)this.couplings.delete(k);}
+    u.exists=false;this.events.split++;this.pushLog('split',u.layer,2,u.nid);}
+  decompress(){const s=this.s;
+    for(const n of this.frontier()){n.age++;
+      if(n.layer===0||!n.members.length)continue;
+      n.members=n.members.filter(m=>this.nodes.get(m).exists);
+      if(n.members.length<s.min_cluster_size){this._dissolve(n);continue;}
+      let sup=0;for(const [k,w] of this.couplings){const [a,b]=k.split(',').map(Number);if(a===n.nid||b===n.nid)sup+=w;}
+      const stick=(1+s.layer_stick*n.layer)*(0.4+1.2*n.bind);
+      n.cohesion*=(1-s.base_decay/stick);n.cohesion=Math.min(1,n.cohesion+s.support_boost*sup);
+      if(n.age>s.grace_ticks&&n.cohesion<s.dissolve_cohesion)this._dissolve(n);}}
+  _dissolve(unit){for(const mid of unit.members){const m=this.nodes.get(mid);if(m&&m.exists){m.parent=null;m.cohesion=1;m.age=0;m.flash=1;}}
+    for(const [k] of [...this.couplings]){const [a,b]=k.split(',').map(Number);if(a===unit.nid||b===unit.nid)this.couplings.delete(k);}
+    unit.exists=false;this.events.brk++;this.pushLog('break',unit.layer,unit.members.length,unit.nid);}
+
+  // entropy at the bottom
+  dissipate(){const s=this.s;
+    for(const n of this.nodes.values()){
+      if(!n.exists||n.layer!==0)continue;
+      if(n.parent===null){n.age++;
+        if(n.age>s.l0_min_age&&this.rnd()<s.l0_death_prob){
+          let sup=0;for(const [k,w] of this.couplings){const [a,b]=k.split(',').map(Number);if(a===n.nid||b===n.nid)sup+=w;}
+          if(sup<0.3)this._erase(n);}}
+      else if(this.rnd()<s.member_death_prob)this._erase(n);}}
+  _erase(n){if(n.parent!==null&&this.nodes.has(n.parent)){const p=this.nodes.get(n.parent);const i=p.members.indexOf(n.nid);if(i>=0)p.members.splice(i,1);}
+    for(const [k] of [...this.couplings]){const [a,b]=k.split(',').map(Number);if(a===n.nid||b===n.nid)this.couplings.delete(k);}
+    n.exists=false;this.events.faded++;}
+
+  agency(){for(const n of this.frontier()){if(n.layer>=1&&this._trans(n.nid).has(n.nid))return true;}return false;}
+  _trans(nid,seen){seen=seen||new Set();for(const m of this.nodes.get(nid).members){if(this.nodes.has(m)&&!seen.has(m)){seen.add(m);this._trans(m,seen);}}return seen;}
+  pushLog(type,layer,k,id){this.log.unshift({t:this.tick,type,layer,k,id});if(this.log.length>40)this.log.pop();}
+  stepEngine(){this.tick++;this.distinction();this.associate();this.compress();this.recruit();this.proliferate();this.decompress();this.dissipate();}
+  layerHist(){const h={};for(const n of this.existing())h[n.layer]=(h[n.layer]||0)+1;return h;}
+  lineageCount(){const s=new Set();for(const n of this.frontier())if(n.layer>=1)s.add(n.lineage);return s.size;}
+}
+
+// ---------------- rendering ----------------
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let DPR=Math.min(2,window.devicePixelRatio||1),VW=0,VH=0;
+function resize(){const r=document.getElementById('stage').getBoundingClientRect();VW=r.width;VH=r.height;cv.width=VW*DPR;cv.height=VH*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',resize);
+let PSC=1,PCX=0,PCY=0;
+function setProj(){PSC=Math.min(VW,VH)*0.72;PCX=VW/2;PCY=VH/2;}
+function proj0(f){return PCX+(f[0]-0.5)*PSC;}
+function proj1(f){return PCY+(f[1]-0.5)*PSC;}
+
+let world,playing=true,speed=3,frame=0,spin=0,fstamp=0;
+const knobs={lineages:3,indel:0.7,dec:0.03};let rngSeed=11;
+
+function newWorld(fresh){
+  if(fresh)rngSeed=(Math.random()*1e9)|0;
+  world=new World(makeSeed({n_mega:knobs.lineages,layer_stick:knobs.indel,base_decay:knobs.dec}),rngSeed);
+  setProj();
+  for(const n of world.nodes.values()){n.tx=proj0(n.feature);n.ty=proj1(n.feature);
+    n.x=n.tx+(Math.random()-.5)*6;n.y=n.ty+(Math.random()-.5)*6;}
+}
+function ringR(node){if(!node.members.length)return 4;const k=node.members.length;return 10+4.4*Math.sqrt(k)+7*(node.layer-1);}
+function layout(){
+  const fr=world.frontier();const units=[];for(const n of fr)if(n.layer>=1)units.push(n);
+  const cx=VW/2,cy=VH/2;
+  // physics only on units (few) ; free L0 placed cheaply by projection
+  for(let i=0;i<units.length;i++){const a=units[i];
+    for(let j=i+1;j<units.length;j++){const b=units[j];
+      let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy+0.01;if(d2>140000)continue;
+      const f=(260+(ringR(a)+ringR(b))*1.6)/d2,d=Math.sqrt(d2);dx/=d;dy/=d;
+      a.vx+=dx*f;a.vy+=dy*f;b.vx-=dx*f;b.vy-=dy*f;}
+    a.vx+=(cx-a.x)*0.0009;a.vy+=(cy-a.y)*0.0009;}
+  for(const [k,w] of world.couplings){const [ia,ib]=k.split(',').map(Number);
+    const a=world.nodes.get(ia),b=world.nodes.get(ib);
+    if(!a.exists||a.parent!==null||!b.exists||b.parent!==null||a.layer<1||b.layer<1)continue;
+    let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+    const target=46-16*w+(ringR(a)+ringR(b));const f=(d-target)*0.010*w;dx/=d;dy/=d;
+    a.vx+=dx*f;a.vy+=dy*f;b.vx-=dx*f;b.vy-=dy*f;}
+  for(const a of units){a.vx*=0.82;a.vy*=0.82;a.x+=a.vx;a.y+=a.vy;
+    const m=ringR(a)+8;a.x=Math.max(m,Math.min(VW-m,a.x));a.y=Math.max(m,Math.min(VH-m,a.y));
+    if(a.flash>0)a.flash*=0.92;}
+  spin+=0.0013;fstamp++;
+  for(const a of units)placeTree(a,a.x,a.y,spin);
+  // free L0 dust eases toward its projection target (cheap)
+  for(const n of fr){if(n.layer!==0)continue;
+    n.x+=(n.tx-n.x)*0.05+(Math.random()-.5)*0.5;n.y+=(n.ty-n.y)*0.05+(Math.random()-.5)*0.5;
+    if(n.flash>0)n.flash*=0.9;}
+}
+function placeTree(node,cx,cy,sp){node.x=cx;node.y=cy;const k=node.members.length;if(!k)return;
+  const R=ringR(node);for(let i=0;i<k;i++){const m=world.nodes.get(node.members[i]);if(!m)continue;
+    const ang=(i/k)*TAU+sp+node.nid*0.7,rr=(k<=1)?0:R;
+    placeTree(m,cx+Math.cos(ang)*rr,cy+Math.sin(ang)*rr,sp*0.5+0.3);
+    if(m.flash>0)m.flash*=0.92;}}
+function hexA(hex,a){const h=hex.replace('#','');return`rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`;}
+function membraneR(node){if(node._ms===fstamp)return node._mr;
+  if(!node.members.length){node._ms=fstamp;node._mr=5;return 5;}
+  let mx=0;for(const mid of node.members){const m=world.nodes.get(mid);if(!m)continue;mx=Math.max(mx,Math.hypot(m.x-node.x,m.y-node.y)+membraneR(m));}
+  node._ms=fstamp;node._mr=mx+6;return node._mr;}
+function draw(){
+  ctx.clearRect(0,0,VW,VH);
+  ctx.lineWidth=1;
+  for(const [k,w] of world.couplings){const [ia,ib]=k.split(',').map(Number);
+    const a=world.nodes.get(ia),b=world.nodes.get(ib);
+    if(!a.exists||a.parent!==null||!b.exists||b.parent!==null||a.layer<1||b.layer<1)continue;
+    ctx.strokeStyle=hexA('#6f7bc0',0.05+w*0.22);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  const units=world.existing().filter(u=>u.members.length).sort((p,q)=>q.layer-p.layer);
+  for(const u of units){const col=layerColor(u.layer),R=membraneR(u);
+    ctx.fillStyle=hexA(col,0.05+u.flash*0.10);ctx.beginPath();ctx.arc(u.x,u.y,R,0,TAU);ctx.fill();
+    ctx.strokeStyle=hexA(col,0.4+u.flash*0.5);ctx.lineWidth=1.3;
+    ctx.shadowColor=col;ctx.shadowBlur=6+u.layer*4+u.flash*16;
+    ctx.beginPath();ctx.arc(u.x,u.y,R,0,TAU);ctx.stroke();ctx.shadowBlur=0;}
+  for(const nd of world.existing()){const col=layerColor(nd.layer),leaf=!nd.members.length,r=leaf?(2.2+nd.flash*1.5):(2.2+nd.layer*0.5);
+    if(!leaf){ctx.shadowColor=col;ctx.shadowBlur=7;}
+    ctx.fillStyle=leaf?col:hexA(col,0.92);
+    ctx.globalAlpha=(nd.parent!==null&&leaf)?0.7:1;
+    ctx.beginPath();ctx.arc(nd.x,nd.y,r,0,TAU);ctx.fill();
+    ctx.globalAlpha=1;ctx.shadowBlur=0;}
+}
+const el=id=>document.getElementById(id);
+function buildAsc(){const asc=el('asc');asc.innerHTML='';
+  for(let L=0;L<=6;L++){const c=layerColor(L);const d=document.createElement('div');d.className='rung';d.id='rung'+L;d.style.color=c;
+    d.innerHTML='<span class="dot"></span><span class="lab">L'+L+' '+LAYER_NAME[L]+' <small>'+LAYER_ZH[L]+'</small></span><span class="cnt" id="cnt'+L+'">·</span>';
+    asc.appendChild(d);}}
+function updatePanel(){
+  const h=world.layerHist(),keys=Object.keys(h).map(Number),tall=keys.length?Math.max.apply(null,keys):0;
+  el('tickN').textContent='t'+String(world.tick).padStart(3,'0');
+  el('tall').textContent='L'+tall;el('tall').style.color=layerColor(tall);
+  el('lin').textContent=world.lineageCount();
+  el('sub').textContent=world.events.born+' / '+world.events.faded;
+  el('folds').textContent=world.events.fold;el('breaks').textContent=world.events.brk;
+  for(let L=0;L<=6;L++){const rung=el('rung'+L),cnt=el('cnt'+L),c=h[L]||0;
+    cnt.textContent=c||'·';rung.classList.toggle('live',c>0);rung.classList.toggle('top',L===tall&&c>0);}
+  const ag=world.agency();el('ring').classList.toggle('on',ag);
+  el('agText').textContent=ag?'Agency — EMERGED ⊘→●':'Agency — not emerged';
+  const log=el('log');log.innerHTML='';
+  for(const e of world.log){const ln=document.createElement('div');ln.className='ln';
+    let arrow,label,ecol;
+    if(e.type==='fold'){arrow='L'+e.layer+'←'+e.k;label='fold';ecol='style="color:'+layerColor(e.layer)+'"';}
+    else if(e.type==='split'){arrow='L'+e.layer+'⇒2';label='split';ecol='style="color:'+layerColor(e.layer)+'"';}
+    else{arrow='L'+e.layer+'→'+e.k;label='break';ecol='style="color:var(--break)"';}
+    ln.innerHTML='<span class="t">t'+String(e.t).padStart(3,'0')+'</span><span class="e" '+ecol+'>'+label+'</span><span>'+arrow+'</span><span class="seed">#'+e.id+'</span>';
+    log.appendChild(ln);}
+}
+let tickerTimer=null;
+function flashTicker(t){const x=el('ticker');x.textContent=t;x.classList.add('on');clearTimeout(tickerTimer);tickerTimer=setTimeout(()=>x.classList.remove('on'),900);}
+function loop(){
+  layout();
+  if(playing){frame++;const interval=Math.max(2,14-speed*1.6);
+    if(frame%Math.round(interval)===0){const fb=world.events.fold,bb=world.events.brk,sb0=world.events.split;world.stepEngine();
+      const sb=world.events.split;
+      if(world.events.fold>fb)flashTicker('P9 · compression 壓縮 — boundary drawn, substrate kept');
+      else if(world.events.split>sb0)flashTicker('proliferation 增生 — a unit divides (self-replication, one scale up)');
+      else if(world.events.brk>bb)flashTicker('P13 · collapse 崩解 — boundary dissolved, substrate kept');
+      updatePanel();}}
+  draw();requestAnimationFrame(loop);
+}
+function bindRange(id,vid,key,fmt,live){const r=el(id),v=el(vid);
+  r.addEventListener('input',()=>{knobs[key]=parseFloat(r.value);v.textContent=fmt(r.value);if(live)live();});}
+el('kSpeed').addEventListener('input',e=>{speed=+e.target.value;el('vSpeed').textContent=speed;});
+bindRange('kLin','vLin','lineages',x=>x,()=>{newWorld(false);updatePanel();});
+bindRange('kInd','vInd','indel',x=>(+x).toFixed(2),()=>{if(world)world.s.layer_stick=knobs.indel;});
+bindRange('kDec','vDec','dec',x=>(+x).toFixed(3),()=>{if(world)world.s.base_decay=knobs.dec;});
+el('play').addEventListener('click',()=>{playing=!playing;el('play').textContent=playing?'Pause':'Play';});
+el('step').addEventListener('click',()=>{world.stepEngine();updatePanel();});
+el('reseed').addEventListener('click',()=>{newWorld(true);updatePanel();});
+resize();buildAsc();newWorld(false);updatePanel();loop();
+</script>
+</body>
+</html>

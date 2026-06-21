@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genesis Strata · 造世地層</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#070611;--panel:#0f0e1d;--line:#221f3a;--line-2:#2e2b4a;
+    --text:#ece9f7;--dim:#8b88ad;--dim-2:#5d5a7c;
+    --L0:#3a6ad0;--L1:#2aa0a0;--L2:#3aaa55;--L3:#c9b03a;--L4:#e08a3a;--L5:#e0533a;--L6:#ece9f7;
+  }
+  *{box-sizing:border-box}html,body{height:100%;margin:0}
+  body{background:var(--void);color:var(--text);font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden;-webkit-font-smoothing:antialiased}
+  #app{display:flex;height:100vh;width:100vw}
+  #stage{position:relative;flex:1;min-width:0;background:radial-gradient(120% 90% at 50% 8%,#0d0c1c 0%,var(--void) 70%)}
+  canvas{display:block;width:100%;height:100%}
+  #ticker{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);opacity:0;transition:opacity .3s;pointer-events:none;text-align:center}
+  #ticker.on{opacity:1}
+  #panel{width:340px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;box-shadow:1px 0 0 #000,24px 0 60px -30px #000;z-index:2}
+  header.brand{border-bottom:1px solid var(--line);padding:20px 22px}
+  .brand h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:21px;letter-spacing:-.01em;margin:0;line-height:1}
+  .brand .zh{font-size:13px;color:var(--dim);margin-top:6px;letter-spacing:.16em}
+  .brand .sub{font-size:11px;color:var(--dim-2);margin-top:11px;line-height:1.55}
+  .scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+  .block{border-bottom:1px solid var(--line);padding:15px 22px}
+  .eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim-2);margin:0 0 12px;display:flex;justify-content:space-between}
+  .row{display:flex;align-items:center;gap:9px;margin:9px 0}
+  .row .dot{width:10px;height:10px;border-radius:2px;flex:none}
+  .row .nm{font-size:11px;color:var(--dim);width:74px;flex:none}
+  .row .nm b{color:var(--text);font-weight:600}
+  .row .barwrap{flex:1;height:7px;background:#ffffff0a;border-radius:4px;overflow:hidden}
+  .row .bar{height:100%;border-radius:4px;transition:width .2s}
+  .row .tk{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums;width:54px;text-align:right;flex:none}
+  .drv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .drv .card{background:#ffffff06;border:1px solid var(--line-2);border-radius:8px;padding:10px}
+  .drv .k{font-size:10px;color:var(--dim-2);letter-spacing:.08em;text-transform:uppercase}
+  .drv .v{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:17px;margin-top:3px;font-variant-numeric:tabular-nums}
+  .btns{display:flex;gap:8px;margin-bottom:13px}
+  button.ctl{flex:1;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.04em;color:var(--text);background:#ffffff08;border:1px solid var(--line-2);border-radius:6px;padding:9px 0;cursor:pointer;transition:.15s}
+  button.ctl:hover{background:#ffffff12;border-color:#46455f}
+  button.ctl:focus-visible{outline:2px solid var(--L0);outline-offset:2px}
+  .knob{margin:11px 0}
+  .knob label{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:6px}
+  .knob label b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:var(--line-2);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);cursor:pointer;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line-2)}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--text);cursor:pointer;border:2px solid var(--panel)}
+  .foot{padding:13px 22px;font-size:10px;color:var(--dim-2);letter-spacing:.04em;line-height:1.6}
+  @media (max-width:760px){#app{flex-direction:column}#panel{width:100%;height:auto;max-height:48vh;border-right:none;border-bottom:1px solid var(--line)}#stage{flex:1;min-height:52vh}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <header class="brand">
+      <h1>Genesis · Strata</h1>
+      <div class="zh">造世地層 · L0–L6</div>
+      <div class="sub">Not a pyramid with the drama at the top — a stack of strata. Every layer keeps accumulating and is retained; lower strata thicken first and lift the upper, which feed back down. Collapse is a rare footnote.<br>每一層都在堆積與留存，互相墊高。</div>
+    </header>
+    <div class="scroll">
+      <div class="block">
+        <p class="eyebrow"><span>Strata thickness 厚度</span><span id="tick">t0</span></p>
+        <div id="rows"></div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>The two engines 兩個引擎</span></p>
+        <div class="drv">
+          <div class="card"><div class="k">collision N²</div><div class="v" id="drvN">0</div></div>
+          <div class="card"><div class="k">retention ΣT</div><div class="v" id="drvT">0</div></div>
+        </div>
+        <p style="font-size:10px;color:var(--dim-2);margin:11px 0 0;line-height:1.55">progress ∝ (agents N)² × (accumulated thickness). Both grow and feed each other → super-exponential.</p>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Controls 控制</span></p>
+        <div class="btns">
+          <button class="ctl" id="play">Pause</button>
+          <button class="ctl" id="reset">Reset</button>
+        </div>
+        <div class="knob"><label>Energy input 能量注入 <b id="vE">64</b></label><input type="range" id="kE" min="0" max="120" value="64" step="1"></div>
+        <div class="knob"><label>Mutual lift 互相墊高 <b id="vL">1.00</b></label><input type="range" id="kL" min="0" max="2.5" value="1" step="0.05"></div>
+        <div class="knob"><label>Speed 速度 <b id="vS">3</b></label><input type="range" id="kS" min="1" max="8" value="3" step="1"></div>
+      </div>
+      <div class="foot"><span id="foot">collapse erosion 崩解侵蝕 · 0.0% of accumulation</span><br>retention-dominant (decision 1b) · bidirectional lift (2b) · 零 API · CC BY 4.0</div>
+    </div>
+  </aside>
+  <div id="stage"><div id="ticker"></div><canvas id="cv"></canvas></div>
+</div>
+<script>
+"use strict";
+const CSS=getComputedStyle(document.documentElement);
+const COLS=['--L0','--L1','--L2','--L3','--L4','--L5','--L6'].map(v=>CSS.getPropertyValue(v).trim());
+const NAME=['Distinction','Relation','Boundary','Memory','Model','Meaning','—'];
+const ZH=['區分','關係','邊界','記憶','模型','意義','—'];
+const K=6;
+const CAP=[6000,1600,520,190,78,30,13];
+const R=[0.030,0.060,0.058,0.056,0.054,0.052,0.050];
+const UP=0.020,RETAIN=0.26,ERODE=0.02,COLL_HALF=220,COL_BASE=0.0025;
+let C_LOW=0.16,C_UP=0.11,E_INPUT=64,liftMul=1;
+function hexA(hex,a){const h=hex.replace('#','');return`rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`;}
+
+class Strata{
+  constructor(){this.N=new Array(K+1).fill(0);this.T=new Array(K+1).fill(0);this.N[0]=40;
+    this.tick=0;this.laid=0;this.erosion=0;this.col=new Array(K+1).fill(0);}
+  step(){this.tick++;const N=this.N,T=this.T,dN=[],dT=[];
+    const cl=C_LOW*liftMul,cu=C_UP*liftMul;
+    for(let k=0;k<=K;k++){const lowT=k>0?T[k-1]:0,upT=k<K?T[k+1]:0;
+      const lo=1+cl*Math.log1p(Math.max(0,lowT)),hi=1+cu*Math.log1p(Math.max(0,upT));
+      const room=Math.max(0,1-N[k]/CAP[k]),coll=(N[k]*N[k])/(N[k]+COLL_HALF);
+      const prolif=R[k]*coll*lo*hi*room;
+      const influx=(k===0)?(E_INPUT*room*hi):(UP*N[k-1]*lo);
+      const collapse=COL_BASE*N[k]*Math.pow(N[k]/CAP[k],2);
+      dN[k]=prolif+influx-collapse;dT[k]=RETAIN*(prolif+influx)-ERODE*collapse;
+      this.col[k]=collapse;this.laid+=RETAIN*(prolif+influx);this.erosion+=ERODE*collapse;}
+    for(let k=0;k<=K;k++){N[k]=Math.max(0,N[k]+dN[k]);T[k]=Math.max(T[k]*0.99999,T[k]+dT[k]);}
+  }
+}
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let DPR=Math.min(2,window.devicePixelRatio||1),VW=0,VH=0;
+function resize(){const r=document.getElementById('stage').getBoundingClientRect();VW=r.width;VH=r.height;cv.width=VW*DPR;cv.height=VH*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',resize);
+
+let world,playing=true,speed=3,frame=0,t0=performance.now();
+function newWorld(){world=new Strata();}
+
+function draw(){
+  ctx.clearRect(0,0,VW,VH);
+  const mx=VW*0.13,colW=VW-2*mx,top=VH*0.06,colH=VH*0.88;
+  let total=0;for(let k=0;k<=K;k++)total+=world.T[k];total=Math.max(total,1);
+  const scale=colH/total;
+  // strata stacked L0 (bottom) -> L6 (top)
+  let yB=top+colH;
+  for(let k=0;k<=K;k++){
+    const h=world.T[k]*scale;if(h<0.4){continue;}
+    const yT=yB-h,c=COLS[k];
+    // body
+    const g=ctx.createLinearGradient(0,yT,0,yB);
+    g.addColorStop(0,hexA(c,0.42));g.addColorStop(1,hexA(c,0.20));
+    ctx.fillStyle=g;ctx.fillRect(mx,yT,colW,h);
+    // sediment laminae (accumulated retention -> denser over time)
+    const lam=Math.min(60,Math.floor(world.T[k]/120)+1);
+    ctx.strokeStyle=hexA(c,0.13);ctx.lineWidth=1;
+    for(let i=1;i<lam;i++){const yy=yB-(h*i/lam);ctx.beginPath();ctx.moveTo(mx,yy);ctx.lineTo(mx+colW,yy);ctx.stroke();}
+    // active deposition shimmer at the top edge
+    const pulse=0.45+0.4*Math.sin((performance.now()-t0)/300+k);
+    ctx.strokeStyle=hexA(c,pulse);ctx.lineWidth=2;ctx.shadowColor=c;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.moveTo(mx,yT);ctx.lineTo(mx+colW,yT);ctx.stroke();ctx.shadowBlur=0;
+    // collapse footnote: a small dark notch when collapse fires
+    if(world.col[k]>0.4){const nx=mx+colW*(0.2+0.6*Math.random());ctx.fillStyle='rgba(7,6,17,0.6)';ctx.fillRect(nx,yT,5,Math.min(h,7));}
+    // label
+    if(h>15){ctx.fillStyle=hexA(c,0.95);ctx.font='600 12px "IBM Plex Mono",monospace';ctx.textAlign='left';
+      ctx.fillText('L'+k+(k<6?'  '+ZH[k]:''),mx+10,yB-h/2+4);
+      ctx.textAlign='right';ctx.fillStyle=hexA(c,0.8);ctx.font='600 12px "Space Grotesk",sans-serif';
+      ctx.fillText(Math.round(world.T[k]).toLocaleString(),mx+colW-10,yB-h/2+4);}
+    yB=yT;
+  }
+  // baseline (the energy floor that drives L0)
+  ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(mx,top+colH+0.5);ctx.lineTo(mx+colW,top+colH+0.5);ctx.stroke();
+  ctx.fillStyle='var(--dim-2)';ctx.font='9px "IBM Plex Mono",monospace';ctx.textAlign='center';
+  ctx.fillStyle=hexA('#5d5a7c',1);ctx.fillText('▲ energy input 能量注入 — drives L0 distinction',VW/2,top+colH+16);
+}
+
+const el=id=>document.getElementById(id);
+function buildRows(){const r=el('rows');r.innerHTML='';
+  for(let k=0;k<=K;k++){const d=document.createElement('div');d.className='row';
+    d.innerHTML='<span class="dot" style="background:'+COLS[k]+'"></span>'+
+      '<span class="nm"><b>L'+k+'</b> '+(k<6?ZH[k]:'')+'</span>'+
+      '<span class="barwrap"><span class="bar" id="bar'+k+'" style="background:'+COLS[k]+'"></span></span>'+
+      '<span class="tk" id="tk'+k+'" style="color:'+COLS[k]+'">0</span>';
+    r.appendChild(d);}}
+function updatePanel(){
+  el('tick').textContent='t'+world.tick;
+  let mxT=1;for(let k=0;k<=K;k++)mxT=Math.max(mxT,world.T[k]);
+  let sumT=0,sumN=0;for(let k=0;k<=K;k++){sumT+=world.T[k];sumN+=world.N[k];}
+  for(let k=0;k<=K;k++){el('bar'+k).style.width=(100*world.T[k]/mxT)+'%';
+    el('tk'+k).textContent=Math.round(world.T[k]).toLocaleString();}
+  el('drvN').textContent=Math.round(sumN).toLocaleString();
+  el('drvT').textContent=Math.round(sumT).toLocaleString();
+  const pct=world.laid>0?(100*world.erosion/world.laid):0;
+  el('foot').textContent='collapse erosion 崩解侵蝕 · '+pct.toFixed(1)+'% of accumulation';
+}
+let tickerTimer=null;
+function flash(t){const x=el('ticker');x.textContent=t;x.classList.add('on');clearTimeout(tickerTimer);tickerTimer=setTimeout(()=>x.classList.remove('on'),1400);}
+
+function loop(){
+  if(playing){frame++;if(frame%Math.max(1,9-speed)===0){
+    const before=world.T.map(x=>x);world.step();
+    if(world.tick===6)flash('lower strata thicken first 下層先積 — the wave starts');
+    if(world.tick===40)flash('every layer accumulating 每層都在堆積 — strata, not a pyramid');
+    updatePanel();}}
+  draw();requestAnimationFrame(loop);
+}
+el('kE').addEventListener('input',e=>{E_INPUT=+e.target.value;el('vE').textContent=E_INPUT;});
+el('kL').addEventListener('input',e=>{liftMul=+e.target.value;el('vL').textContent=liftMul.toFixed(2);});
+el('kS').addEventListener('input',e=>{speed=+e.target.value;el('vS').textContent=speed;});
+el('play').addEventListener('click',()=>{playing=!playing;el('play').textContent=playing?'Pause':'Play';});
+el('reset').addEventListener('click',()=>{newWorld();updatePanel();});
+resize();buildRows();newWorld();updatePanel();loop();
+</script>
+</body>
+</html>

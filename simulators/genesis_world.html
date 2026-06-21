@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genesis Chemistry · 造世化學爐</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#070611;--panel:#0f0e1d;--line:#221f3a;--line-2:#2e2b4a;
+    --text:#ece9f7;--dim:#8b88ad;--dim-2:#5d5a7c;
+    --H:#eef0f6;--O:#e0533a;--C:#7a7a92;--N:#4a82d8;
+    --bound:#d2b24a;--cold:#3a5ad0;--hot:#e05a33;
+  }
+  *{box-sizing:border-box}html,body{height:100%;margin:0}
+  body{background:var(--void);color:var(--text);font-family:"IBM Plex Mono",ui-monospace,monospace;overflow:hidden;-webkit-font-smoothing:antialiased}
+  #app{display:flex;height:100vh;width:100vw}
+  #stage{position:relative;flex:1;min-width:0;background:var(--void)}
+  canvas{display:block;width:100%;height:100%}
+  #ticker{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);opacity:0;transition:opacity .3s;pointer-events:none;text-align:center}
+  #ticker.on{opacity:1}
+  #panel{width:340px;flex:none;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;box-shadow:1px 0 0 #000,24px 0 60px -30px #000;z-index:2}
+  header.brand{border-bottom:1px solid var(--line);padding:20px 22px}
+  .brand h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:21px;letter-spacing:-.01em;margin:0;line-height:1}
+  .brand .zh{font-size:13px;color:var(--dim);margin-top:6px;letter-spacing:.16em}
+  .brand .sub{font-size:11px;color:var(--dim-2);margin-top:11px;line-height:1.55}
+  .scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+  .block{border-bottom:1px solid var(--line);padding:16px 22px}
+  .eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim-2);margin:0 0 12px;display:flex;justify-content:space-between}
+  .temp{display:flex;align-items:baseline;gap:10px}
+  .temp .tn{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:30px;font-variant-numeric:tabular-nums;line-height:1}
+  .temp .ts{font-size:11px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+  .tbar{height:6px;border-radius:3px;margin-top:11px;background:linear-gradient(90deg,var(--cold),#7a5fae,var(--hot));position:relative}
+  .tbar .mk{position:absolute;top:-3px;width:3px;height:12px;background:#fff;border-radius:2px;box-shadow:0 0 6px #fff;transform:translateX(-50%)}
+  .lvl{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:baseline}
+  .lvl .lab{font-size:11px;color:var(--dim)}
+  .lvl .lab b{color:var(--text);font-weight:500}
+  .lvl .val{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px;text-align:right;font-variant-numeric:tabular-nums}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:5px}
+  #census{font-size:12px;line-height:1.85}
+  #census .row{display:flex;justify-content:space-between}
+  #census .f{color:var(--text)}
+  #census .n{color:var(--dim);font-variant-numeric:tabular-nums}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:var(--dim)}
+  .strat{height:54px;border-radius:6px;border:1px solid var(--line-2);position:relative;overflow:hidden;background:linear-gradient(180deg,#0c1430,#1a0f12)}
+  .strat .band{position:absolute;left:0;right:0;height:2px;background:#fff;opacity:.7;box-shadow:0 0 6px #fff}
+  .strat .cap{position:absolute;left:6px;font-size:9px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+  .btns{display:flex;gap:8px;margin-bottom:14px}
+  button.ctl{flex:1;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.04em;color:var(--text);background:#ffffff08;border:1px solid var(--line-2);border-radius:6px;padding:9px 0;cursor:pointer;transition:.15s}
+  button.ctl:hover{background:#ffffff12;border-color:#46455f}
+  button.ctl.on{background:var(--bound);color:#1a1405;border-color:var(--bound);font-weight:600}
+  button.ctl:focus-visible{outline:2px solid var(--N);outline-offset:2px}
+  .knob{margin:12px 0}
+  .knob label{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:6px}
+  .knob label b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:var(--line-2);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);cursor:pointer;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line-2)}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--text);cursor:pointer;border:2px solid var(--panel)}
+  .foot{padding:13px 22px;font-size:10px;color:var(--dim-2);letter-spacing:.04em;line-height:1.6}
+  @media (max-width:760px){
+    #app{flex-direction:column}
+    #panel{width:100%;height:auto;max-height:50vh;border-right:none;border-bottom:1px solid var(--line)}
+    #stage{flex:1;min-height:50vh}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <header class="brand">
+      <h1>Genesis · Chemistry</h1>
+      <div class="zh">造世化學爐 · L0→L1→L2</div>
+      <div class="sub">The real element roster (CHONPS for life + catalyst metals + filler + radioactive battery) under the Genesis tower. Cool it to condense a world; heavy battery sinks to the core, organics float, molecules fold into compartments.<br>真實元素：CHONPS＋催化金屬＋填料＋放射性電池。</div>
+    </header>
+    <div class="scroll">
+      <div class="block">
+        <p class="eyebrow"><span>Temperature 溫度</span><span id="tstate">—</span></p>
+        <div class="temp"><span class="tn" id="tn">1.00</span><span class="ts" id="tlab">molten</span></div>
+        <div class="tbar"><div class="mk" id="tmk" style="left:100%"></div></div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>The tower 高塔</span><span id="tick">t0</span></p>
+        <div class="lvl">
+          <span class="lab"><b>L0</b> atoms 原子</span><span></span><span class="val" id="vL0">0</span>
+          <span class="lab"><b>L1</b> molecules 分子</span><span></span><span class="val" id="vL1">0</span>
+          <span class="lab"><b>L2</b> compartments 區室</span><span></span><span class="val" id="vL2">0</span>
+        </div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Molecule census 分子普查</span><span id="complete">0 complete</span></p>
+        <div id="census"></div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Stratification 分層</span><span>gravity ↓</span></p>
+        <div class="strat" id="strat">
+          <div class="cap" style="top:4px">light · 輕（上）</div>
+          <div class="cap" style="bottom:4px">heavy · 重（下）</div>
+          <div class="band" id="bandL" style="top:50%"></div>
+          <div class="band" id="bandH" style="top:50%;background:var(--O)"></div>
+        </div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Controls 控制</span></p>
+        <div class="btns">
+          <button class="ctl" id="play">Pause</button>
+          <button class="ctl" id="reseed">Reseed</button>
+          <button class="ctl on" id="auto">Auto-cycle</button>
+        </div>
+        <div class="knob"><label>Temperature 溫度 <b id="vT">1.00</b></label><input type="range" id="kT" min="0.03" max="1" value="1" step="0.01"></div>
+        <div class="knob"><label>Gravity 重力 <b id="vG">0.011</b></label><input type="range" id="kG" min="0" max="0.03" value="0.011" step="0.001"></div>
+      </div>
+      <div class="block">
+        <p class="eyebrow"><span>Elements 元素</span></p>
+        <div class="legend">
+          <span><span class="dot" style="background:#eef0f6"></span>H</span>
+          <span><span class="dot" style="background:#6a6a80"></span>C</span>
+          <span><span class="dot" style="background:#4a82d8"></span>N</span>
+          <span><span class="dot" style="background:#e0533a"></span>O</span>
+          <span><span class="dot" style="background:#e8943a"></span>P</span>
+          <span><span class="dot" style="background:#e6d24a"></span>S</span>
+          <span><span class="dot" style="background:#c98a5a"></span>catalyst Fe/Mg/Zn/Mo</span>
+          <span><span class="dot" style="background:#9a8a7a"></span>filler Si</span>
+          <span><span class="dot" style="background:#5ad07a"></span>battery K/U/Th</span>
+          <span><span class="dot" style="background:var(--bound)"></span>L2 membrane</span>
+        </div>
+      </div>
+      <div class="foot">A=bonding · C↑=molecule (closed valence) · C↓=thermal break · gravity=stratification. Real chemistry as the Genesis L0→L1→L2 operations.<br>零 API · 純前端 · CC BY 4.0</div>
+    </div>
+  </aside>
+  <div id="stage"><div id="ticker"></div><canvas id="cv"></canvas></div>
+</div>
+<script>
+"use strict";
+const CSS=getComputedStyle(document.documentElement);
+const COL={H:'#eef0f6',C:'#6a6a80',N:'#4a82d8',O:'#e0533a',P:'#e8943a',S:'#e6d24a',Fe:'#c98a5a',Mg:'#8fd06a',Zn:'#8a9aa8',Mo:'#5ab0c0',Si:'#9a8a7a',K:'#b05ad0',U:'#5ad07a',Th:'#4a9a6a'};
+function arad(m){return 2+1.3*Math.log10(m+1);}
+const BOUND=CSS.getPropertyValue('--bound').trim();
+// element -> [valence, electronegativity, mass, radius]
+const EL={H:[1,2.20,1,'life'],C:[4,2.55,12,'life'],N:[3,3.04,14,'life'],O:[2,3.44,16,'life'],P:[5,2.19,31,'life'],S:[2,2.58,32,'life'],Fe:[0,1.83,56,'catalyst'],Mg:[0,1.31,24,'catalyst'],Zn:[0,1.65,65,'catalyst'],Mo:[0,2.16,96,'catalyst'],Si:[0,1.90,28,'filler'],K:[0,0.82,39,'battery'],U:[0,1.38,238,'battery'],Th:[0,1.30,232,'battery']};
+
+function RNG(s){s=s>>>0||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+
+class Chem{
+  constructor(comp,rngSeed){
+    this.rnd=RNG(rngSeed);this.box=1;this.g=0.011;this.T=1;this.tick=0;
+    this.r_bond=0.045;this.r_agg=0.085;this.atoms=[];this._id=0;
+    for(const el in comp)for(let i=0;i<comp[el];i++)this.atoms.push(this._atom(el,this.rnd(),this.rnd()));
+  }
+  _atom(el,x,y){const e=EL[el];return {id:this._id++,el,val:e[0],chi:e[1],mass:e[2],rad:arad(e[2]),role:e[3],x,y,vx:0,vy:0,bonds:new Map()};}
+  used(a){let s=0;for(const o of a.bonds.values())s+=o;return s;}
+  free(a){return a.val-this.used(a);}
+  _d(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+  step(){
+    this.tick++;const A=this.atoms,cell=this.r_bond,T=this.T;
+    const amp=0.02*Math.sqrt(Math.max(T,0.02));
+    for(const a of A){a.vx+=(this.rnd()*2-1)*amp;a.vy+=(this.rnd()*2-1)*amp;a.vy+=this.g*Math.log(a.mass+1)*0.12;}
+    for(const a of A)for(const [bid,order] of a.bonds){const b=this._byId(bid);if(!b)continue;
+      const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1e-9,rest=this.r_bond*(0.62-0.05*order),f=(d-rest)*0.28;
+      a.vx+=dx/d*f;a.vy+=dy/d*f;}
+    for(const a of A){a.vx*=0.6;a.vy*=0.6;a.x+=a.vx;a.y+=a.vy;
+      if(a.x<0||a.x>1){a.vx*=-1;a.x=Math.min(Math.max(a.x,0),1);}
+      if(a.y<0||a.y>1){a.vy*=-1;a.y=Math.min(Math.max(a.y,0),1);}}
+    // break (order-aware)
+    for(const a of A)for(const bid of [...a.bonds.keys()]){if(bid>a.id){let order=a.bonds.get(bid);
+      const bp=0.45*T*T/(order*order);
+      if(this.rnd()<bp){order--;const b=this._byId(bid);
+        if(order<=0){a.bonds.delete(bid);if(b)b.bonds.delete(a.id);}else{a.bonds.set(bid,order);if(b)b.bonds.set(a.id,order);}}}}
+    // catalysis field (complete molecules speed nearby bonding)
+    const cat=this._catalysis(cell);
+    const fp=0.55*Math.max(0,1-T);
+    const grid=new Map();
+    for(const a of A){const k=(a.x/cell|0)+','+(a.y/cell|0);(grid.get(k)||grid.set(k,[]).get(k)).push(a);}
+    for(const a of A){if(this.free(a)<=0)continue;const gx=a.x/cell|0,gy=a.y/cell|0;
+      for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const arr=grid.get((gx+dx)+','+(gy+dy));if(!arr)continue;
+        for(const b of arr){if(b.id<=a.id||this.free(b)<=0||a.bonds.has(b.id))continue;
+          if(this._d(a,b)<=this.r_bond){const p=fp*(1+(cat.get(gx+','+gy)||0));
+            if(this.rnd()<Math.min(0.95,p)){a.bonds.set(b.id,1);b.bonds.set(a.id,1);if(this.free(a)<=0)break;}}}}}
+    // promote single -> double/triple
+    const pp=0.30*Math.max(0,1-T);
+    for(const a of A)for(const bid of [...a.bonds.keys()]){if(bid>a.id){const b=this._byId(bid);
+      if(b&&this.free(a)>0&&this.free(b)>0&&a.bonds.get(bid)<3&&this.rnd()<pp){a.bonds.set(bid,a.bonds.get(bid)+1);b.bonds.set(a.id,b.bonds.get(a.id)+1);}}}
+  }
+  _byId(id){return this._map?this._map.get(id):this.atoms.find(a=>a.id===id);}
+  _reindex(){this._map=new Map();for(const a of this.atoms)this._map.set(a.id,a);}
+  _catalysis(cell){const f=new Map();
+    for(const m of this.molecules()){if(m.length>1&&m.every(a=>this.free(a)===0)){
+      const cx=m.reduce((s,a)=>s+a.x,0)/m.length,cy=m.reduce((s,a)=>s+a.y,0)/m.length;
+      const k=(cx/cell|0)+','+(cy/cell|0);f.set(k,(f.get(k)||0)+0.6);}}
+    for(const a of this.atoms){if(a.role==='catalyst'){const k=(a.x/cell|0)+','+(a.y/cell|0);f.set(k,(f.get(k)||0)+0.9);}}
+    return f;}
+  molecules(){this._reindex();const seen=new Set(),out=[];
+    for(const a of this.atoms){if(seen.has(a.id))continue;const stack=[a],comp=[];
+      while(stack.length){const x=stack.pop();if(seen.has(x.id))continue;seen.add(x.id);comp.push(x);
+        for(const bid of x.bonds.keys()){const b=this._map.get(bid);if(b&&!seen.has(b.id))stack.push(b);}}
+      out.push(comp);}return out;}
+  formula(comp){const c={H:0,O:0,N:0,C:0,P:0,S:0};for(const a of comp)c[a.el]=(c[a.el]||0)+1;let s='';
+    for(const el of ['C','H','N','O','P','S'])if(c[el])s+=el+(c[el]>1?c[el]:'');return s;}
+  census(){const cc={};let free=0,complete=0;
+    for(const m of this.molecules()){if(m.length===1){if(m[0].role==='life')free++;continue;}
+      if(m.every(a=>this.free(a)===0))complete++;const f=this.formula(m);cc[f]=(cc[f]||0)+1;}
+    return {cc,free,complete};}
+  compartments(){const mols=this.molecules().filter(m=>m.length>1);
+    const cen=mols.map(m=>[m.reduce((s,a)=>s+a.x,0)/m.length,m.reduce((s,a)=>s+a.y,0)/m.length]);
+    const n=cen.length,seen=new Set(),out=[];
+    for(let i=0;i<n;i++){if(seen.has(i))continue;const stack=[i],grp=[];
+      while(stack.length){const x=stack.pop();if(seen.has(x))continue;seen.add(x);grp.push(x);
+        for(let j=0;j<n;j++)if(!seen.has(j)&&Math.hypot(cen[x][0]-cen[j][0],cen[x][1]-cen[j][1])<=this.r_agg)stack.push(j);}
+      if(grp.length>=3)out.push(grp.map(k=>cen[k]));}
+    return out;}
+  strat(){let ls=0,ln=0,hs=0,hn=0;for(const a of this.atoms){if(a.mass<=4){ls+=a.y;ln++;}else{hs+=a.y;hn++;}}
+    return [ln?ls/ln:.5,hn?hs/hn:.5];}
+}
+
+// ---------------- render ----------------
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let DPR=Math.min(2,window.devicePixelRatio||1),VW=0,VH=0,VX=0,VY=0,VS=0;
+function resize(){const r=document.getElementById('stage').getBoundingClientRect();VW=r.width;VH=r.height;cv.width=VW*DPR;cv.height=VH*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
+  VS=Math.min(VW,VH)*0.92;VX=(VW-VS)/2;VY=(VH-VS)/2;}
+window.addEventListener('resize',resize);
+function sx(x){return VX+x*VS;}function sy(y){return VY+y*VS;}
+
+let world,playing=true,auto=true,frame=0,phase=0,gravity=0.011,manualT=1;
+function newWorld(fresh){const seed=fresh?(Math.random()*1e9|0):7;
+  world=new Chem({H:90,O:28,C:18,N:14,P:4,S:4,Fe:4,Mg:3,Zn:2,Mo:1,Si:6,K:3,U:1,Th:1},seed);world.g=gravity;phase=0;}
+function autoT(){ // triangle: cool -> hold -> heat -> hold
+  const P=900,p=phase%P;
+  if(p<300)return 1-0.96*(p/300);
+  if(p<560)return 0.04;
+  if(p<820)return 0.04+0.96*((p-560)/260);
+  return 1;
+}
+function hexA(hex,a){const h=hex.replace('#','');return`rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`;}
+
+function draw(){
+  ctx.clearRect(0,0,VW,VH);
+  // vessel with thermal gradient (cold top -> warm bottom), intensity by T
+  const g=ctx.createLinearGradient(0,VY,0,VY+VS);
+  g.addColorStop(0,hexA('#28407e',0.05+0.10*(1-world.T)));
+  g.addColorStop(1,hexA('#7e2f1e',0.05+0.16*world.T));
+  ctx.fillStyle=g;ctx.fillRect(VX,VY,VS,VS);
+  ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;ctx.strokeRect(VX,VY,VS,VS);
+  // L2 compartments (membranes around molecule clusters)
+  for(const grp of world.compartments()){
+    let cx=0,cy=0;for(const c of grp){cx+=c[0];cy+=c[1];}cx/=grp.length;cy/=grp.length;
+    let R=0;for(const c of grp)R=Math.max(R,Math.hypot(c[0]-cx,c[1]-cy));
+    const rr=R*VS+16;
+    ctx.fillStyle=hexA(BOUND,0.05);ctx.beginPath();ctx.arc(sx(cx),sy(cy),rr,0,6.2832);ctx.fill();
+    ctx.strokeStyle=hexA(BOUND,0.4);ctx.lineWidth=1.3;ctx.shadowColor=BOUND;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.arc(sx(cx),sy(cy),rr,0,6.2832);ctx.stroke();ctx.shadowBlur=0;
+  }
+  // bonds (double/triple = parallel lines)
+  for(const a of world.atoms)for(const [bid,order] of a.bonds){if(bid>a.id){const b=world._map?world._map.get(bid):null;if(!b)continue;
+    const x1=sx(a.x),y1=sy(a.y),x2=sx(b.x),y2=sy(b.y);
+    let nx=-(y2-y1),ny=(x2-x1);const nl=Math.hypot(nx,ny)||1;nx/=nl;ny/=nl;
+    ctx.strokeStyle='rgba(200,205,235,0.5)';ctx.lineWidth=1;
+    for(let k=0;k<order;k++){const off=(k-(order-1)/2)*2.4;
+      ctx.beginPath();ctx.moveTo(x1+nx*off,y1+ny*off);ctx.lineTo(x2+nx*off,y2+ny*off);ctx.stroke();}}}
+  // atoms (CPK colours, size by mass)
+  for(const a of world.atoms){const c=COL[a.el]||'#888';
+    if(a.role==='battery'){ctx.shadowColor=c;ctx.shadowBlur=12;ctx.globalAlpha=0.55+0.25*Math.sin(performance.now()/400+a.id);}
+    else if(a.role==='filler'){ctx.shadowBlur=0;ctx.globalAlpha=0.65;}
+    else{ctx.shadowColor=c;ctx.shadowBlur=a.el==='H'?4:7;ctx.globalAlpha=1;}
+    ctx.fillStyle=c;ctx.beginPath();ctx.arc(sx(a.x),sy(a.y),a.rad,0,6.2832);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;
+    if(a.role==='catalyst'){ctx.strokeStyle=c;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(sx(a.x),sy(a.y),a.rad+2.6,0,6.2832);ctx.stroke();}}
+  // labels on complete molecules
+  ctx.font='9px "IBM Plex Mono",monospace';ctx.textAlign='center';
+  for(const m of world.molecules()){if(m.length>1&&m.every(at=>world.free(at)===0)){
+    const cx=m.reduce((s,a)=>s+a.x,0)/m.length,cy=m.reduce((s,a)=>s+a.y,0)/m.length;
+    ctx.fillStyle='rgba(236,233,247,0.55)';ctx.fillText(world.formula(m),sx(cx),sy(cy)-9);}}
+}
+
+const el=id=>document.getElementById(id);
+function tstate(T){return T>0.7?'molten 熔融':T>0.35?'cooling 冷卻':T>0.12?'condensing 凝結':'frozen 凝固';}
+function updatePanel(){
+  const {cc,free,complete}=world.census();const comps=world.compartments();
+  const mol=Object.values(cc).reduce((a,b)=>a+b,0);
+  el('tick').textContent='t'+world.tick;
+  el('tn').textContent=world.T.toFixed(2);el('vT').textContent=world.T.toFixed(2);
+  el('tlab').textContent=tstate(world.T);el('tstate').textContent=tstate(world.T).split(' ')[0];
+  el('tmk').style.left=(world.T*100)+'%';if(!dragging)el('kT').value=world.T;
+  el('vL0').textContent=world.atoms.length+'  ('+free+' free)';
+  el('vL1').textContent=mol;el('vL2').textContent=comps.length;
+  el('complete').textContent=complete+' complete';
+  const ranked=Object.entries(cc).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  el('census').innerHTML=ranked.length?ranked.map(([f,n])=>'<div class="row"><span class="f">'+f+'</span><span class="n">×'+n+'</span></div>').join(''):'<div class="row"><span class="n">— no molecules (too hot)</span></div>';
+  const [ly,hy]=world.strat();el('bandL').style.top=(ly*100)+'%';el('bandH').style.top=(hy*100)+'%';
+}
+let tickerTimer=null,lastComplete=0;
+function flashTicker(t){const x=el('ticker');x.textContent=t;x.classList.add('on');clearTimeout(tickerTimer);tickerTimer=setTimeout(()=>x.classList.remove('on'),1100);}
+
+function loop(){
+  if(playing){frame++;
+    if(frame%2===0){
+      if(auto){phase++;world.T=autoT();}else world.T=manualT;
+      world.step();
+      const c=world.census().complete;
+      if(c>lastComplete+2)flashTicker('C↑ molecules condensing 分子凝結 — '+c+' complete');
+      else if(c<lastComplete-2)flashTicker('C↓ thermal break 熱解離 — bonds dissociating');
+      lastComplete=c;
+      updatePanel();
+    }
+  }
+  draw();requestAnimationFrame(loop);
+}
+let dragging=false;
+el('kT').addEventListener('input',e=>{manualT=parseFloat(e.target.value);world.T=manualT;auto=false;el('auto').classList.remove('on');dragging=true;el('vT').textContent=manualT.toFixed(2);});
+el('kT').addEventListener('change',()=>{dragging=false;});
+el('kG').addEventListener('input',e=>{gravity=parseFloat(e.target.value);world.g=gravity;el('vG').textContent=gravity.toFixed(3);});
+el('play').addEventListener('click',()=>{playing=!playing;el('play').textContent=playing?'Pause':'Play';});
+el('reseed').addEventListener('click',()=>{newWorld(true);updatePanel();});
+el('auto').addEventListener('click',()=>{auto=!auto;el('auto').classList.toggle('on',auto);if(!auto)manualT=world.T;});
+resize();newWorld(false);updatePanel();loop();
+</script>
+</body>
+</html>
