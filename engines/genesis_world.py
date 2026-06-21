@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Author: Benden Pan · CC BY 4.0 · first published 2026-06
 """
 Genesis — a world on real chemistry  (now with the REAL element roster)
 =======================================================================

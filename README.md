@@ -1,3 +1,4 @@
+<!-- Author: Benden Pan · CC BY 4.0 · first published 2026-06 -->
 # Genesis · 造世方法論框架
 
 **A methodology for world-generation — and the engines that run it.**

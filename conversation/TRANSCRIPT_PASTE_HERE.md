@@ -1,3 +1,4 @@
+<!-- Author: Benden Pan · CC BY 4.0 · first published 2026-06 -->
 # 逐字稿 / Verbatim Transcript — PASTE HERE
 
 This file is intentionally a placeholder. Claude cannot export a guaranteed

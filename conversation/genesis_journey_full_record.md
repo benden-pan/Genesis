@@ -1,3 +1,4 @@
+<!-- Author: Benden Pan · CC BY 4.0 · first published 2026-06 -->
 # Genesis — 對話歷程全紀錄 / Full Conversation Record
 
 > 作者 / Author: **Benden** · 授權 / License: **CC BY 4.0** · 重建日期: 2026-06

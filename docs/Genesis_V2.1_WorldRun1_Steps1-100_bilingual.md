@@ -1,3 +1,4 @@
+<!-- Author: Benden Pan · CC BY 4.0 · first published 2026-06 -->
 # Genesis V2.1 — World-Generation Run #1: An Earth from Nothing
 # Genesis V2.1 — 造世實驗 #1：從無到有的一顆地球
 
